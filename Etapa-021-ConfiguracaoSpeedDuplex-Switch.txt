@@ -1,0 +1,126 @@
+!Autor: Robson Vaamonde
+!Procedimentos em TI: http://procedimentosemti.com.br
+!Bora para Prática: http://boraparapratica.com.br
+!Robson Vaamonde: http://vaamonde.com.br
+!Facebook Procedimentos em TI: https://www.facebook.com/ProcedimentosEmTi
+!Facebook Bora para Prática: https://www.facebook.com/BoraParaPratica
+!Instagram Procedimentos em TI: https://www.instagram.com/procedimentoem
+!YouTUBE Bora Para Prática: https://www.youtube.com/boraparapratica
+!Data de criação: 04/05/2020
+!Data de atualização: 04/05/2020
+!Versão: 0.01
+!Testado e homologado no Cisco Packet Tracer 7.3 e GNS3 2.2.7
+
+!PRIMEIRA ETAPA: Configuração do Switch Layer 3 3560
+!Acessando o modo EXEC Privilégiado
+enable
+
+	!Acessando o modo de Configuração Global de Comandos
+	configure terminal
+		
+		!Acessando a Interface (Porta de Rede) da Conexão do Servidor
+		interface fastEthernet 0/1
+		
+			!Configurando a descrição da Interface (Porta de Rede)
+			description Porta de Conexão do Servidor SERVER-02
+
+			!Configurando a velocidade da Interface (Porta de Rede)
+			!DICA: conexões Ethernet em Switch possui velocidades padrão de: 10, 100 e 1000Mbps
+			!OBSERVAÇÃO: existe velocidades maiores que 1000Mbps como por exemplo 10000Mbps (10Gbps)
+			!OBSERVAÇÃO: quando configurado a velocidade na Interface ela não ficará UP se a outra Interface estiver 
+			!configurada com velocidades diferentes
+			speed 100
+
+			!Configuração do Modo de Transmissão da Interface (Porta de Rede)
+			!DICA: conexões FastEthernet em Switch podem trabalhar com os modos: Half-Duplex, Full-Duplex e Auto
+			!DICA: por padrão o recurso de Duplex está configurado como auto em todas as interfaces
+			!OBSERVAÇÃO: Half-Duplex era o modo de transmissão em redes Ethernet 10Mbps com colisão (CSMA-CD)
+			!OBSERVAÇÃO: Full-Duplex é o modo transmissão em Redes FastEthernet e GigabitEthernet sem colisão
+			!OBSERVAÇÃO: quando configurado o Duplex na Interface ela não ficará UP se a outra Interface estiver
+			!configurada com Duplex diferente
+			!OBSERVAÇÃO: em Interface GigabitEthernet não temos a opção de mudar o Duplex, pois o padrão e Full
+			duplex full
+			
+			!Configuração do MDIX (Medium-Dependent Interface) da Interface (Porta de Rede)
+			!DICA: por padrão o recurso de MDIX está configurado como auto em todas as interfaces
+			!OBSERVAÇÃO: o recurso MDIX facilita na administração do Switch, pois não precisamos se preocupar com
+			!o tipo de cabo utilizado para fazer a conexão com o Host ou outro equipamento na rede como um Switch
+			!EXEMPLO: utilizar cabo direto ou cabo cross-over para fazer o cascateamento entre Switches
+			no mdix auto
+			
+			!Saindo da configuranção da Interface (Porta de Rede)
+			exit
+			
+		!Acessando a Interface (Porta de Rede) da Conexão do Access Point
+		interface FastEthernet 0/2
+			description Porta de Conexao do Access Point N APT-01
+			speed 100
+			duplex full
+			no mdix auto
+			exit
+
+		!Acessando a Interface (Porta de Rede) da Conexão do Router 1941
+		interface FastEthernet 0/24
+			description Porta de Conexao do Router 1941
+			speed 100
+			duplex full
+			exit
+
+		!Acessando todas as Interfaces (Porta de Rede) que não estão sendo utilizadas
+		!DICA: a opção range do comando interface possibilita fazer a mesma configuração em várias interfaces
+		!OBSERVAÇÃO: existe a possibilidade de utilizar a opção de range para portas não consecutivas, utilizando , (vírgula)
+		!EXEMPLO: interface range fastEthernet 0/1 - 5 , fastEthernet 0/10, fastEthernet 0/15
+		interface range FastEthernet 0/3 - 23
+		
+			!Desligando todas as Interfaces (Porta de Rede) que não estão sendo utilizadas
+			!DICA: para aumentar a segurança é recomendado desligar todas as interfaces que não estão sendo utilizadas
+			!OBSERVAÇÃO: desligar as interfaces faz parte da segurança física da rede
+			!OBSERVAÇÃO: todas as interfaces dos Switches estão no status: no shutdown e na VLAN padrão 1 com DTP ativado
+			!OBSERVAÇÃO: o DTP (Dynamic Trunking Protocol) será estudo nas configurações de STP, VLAN e TRUNK
+			shutdown
+			exit
+			
+		!Configurando as Interfaces de Trunk (Tronco) e Backbone (Cascateamento) dos Switches Layer 2 2960
+		interface range GigabitEthernet 0/1 - 2
+			description Porta de Conexao com o Switch Layer 2 2960
+			speed 1000
+			no mdix auto
+			
+			!Saindo de todos os níveis e voltando para o modo EXEC Privilegiado
+			end
+
+!Salvando as configurações da memória RAM para a memória NVRAM
+write
+
+!SEGUNDA ETAPA: Configuração dos Switches Layer 2 2960
+!Acessando o modo EXEC Privilégiado
+enable
+	configure terminal
+		interface range FastEthernet 0/1 - 2
+			description Porta de Conexao dos Desktop
+			speed 100
+			duplex full
+			no mdix auto
+			exit
+		interface range FastEthernet 0/3 - 23
+			shutdown
+			exit
+		interface GigabitEthernet 0/1
+			description Porta de Backbone com o Switch Layer 3 3560
+			speed 1000
+			no mdix auto
+			exit
+		!ADENDO: adicionado a configuração individual da Porta GigabitEthernet 0/2
+		!ERRATA: no vídeo utilizei a opção de range, mais a descrição das Interfaces são diferentes
+		interface GigabitEthernet 0/2
+			description Porta de Backbone com o Switch Layer 2 2960
+			speed 1000
+			no mdix auto
+			end
+write
+	
+!Visualizando as configurações da memória RAM
+show running-config | section interface
+show ip interface brief
+show interfaces fastEthernet 0/1
+show interfaces fastEthernet 0/1 status
